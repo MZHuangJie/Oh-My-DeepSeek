@@ -12,6 +12,7 @@ import { setupAuthHandlers } from './auth';
 import { setupSyncHandlers } from './sync';
 import { setupConversationHandlers } from './conversation';
 import { setupGroupChatHandlers } from './groupChat';
+import { setupExplainHandlers } from './explain';
 
 export function registerAllHandlers() {
   setupWindowHandlers();
@@ -27,4 +28,5 @@ export function registerAllHandlers() {
   setupRoleplayHandlers();
   setupConversationHandlers();
   setupGroupChatHandlers();
+  setupExplainHandlers();
 }

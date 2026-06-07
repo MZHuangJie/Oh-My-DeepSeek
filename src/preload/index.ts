@@ -167,6 +167,20 @@ const api = {
       return () => ipcRenderer.removeListener('group-chat:chunk', handler);
     },
   },
+  explain: {
+    send: (payload: { apiKey: string; model: string; baseUrl: string; messages: Array<{ role: string; content: string }> }) =>
+      ipcRenderer.invoke('explain:send', payload),
+    onChunk: (cb: (text: string) => void) => {
+      const handler = (_: unknown, data: { text: string }) => cb(data.text);
+      ipcRenderer.on('explain:chunk', handler);
+      return () => ipcRenderer.removeListener('explain:chunk', handler);
+    },
+    onDone: (cb: () => void) => {
+      const handler = () => cb();
+      ipcRenderer.on('explain:done', handler);
+      return () => ipcRenderer.removeListener('explain:done', handler);
+    },
+  },
   sync: {
     listSessions: () => ipcRenderer.invoke('sync:listSessions'),
     getSession: (sessionId: string) => ipcRenderer.invoke('sync:getSession', sessionId),
