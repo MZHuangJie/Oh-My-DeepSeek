@@ -14,6 +14,18 @@ function saveWorkspace() {
   setSetting('last_workspace', currentWorkspace);
 }
 
+/** 确保工作区根目录存在 DEEPSEEK.md（空白的），方便用户填写项目规则 */
+function ensureDeepseekMd(workspacePath: string) {
+  const mdPath = path.join(workspacePath, 'DEEPSEEK.md');
+  if (!fs.existsSync(mdPath)) {
+    try {
+      fs.writeFileSync(mdPath, '', 'utf-8');
+    } catch {
+      // 权限不足等情况静默跳过
+    }
+  }
+}
+
 function startWatching(win: BrowserWindow) {
   stopWatching();
   if (!currentWorkspace) return;
@@ -173,6 +185,7 @@ export function setupFileHandlers() {
     saveWorkspace();
     addToRecentWorkspaces(selectedPath);
     syncTerminalCwd(selectedPath);
+    ensureDeepseekMd(selectedPath);
     startWatching(win);
     return selectedPath;
   });
@@ -198,6 +211,7 @@ export function setupFileHandlers() {
     saveWorkspace();
     addToRecentWorkspaces(workspacePath);
     syncTerminalCwd(workspacePath);
+    ensureDeepseekMd(workspacePath);
     startWatching(win);
     return { workspace: workspacePath, openFile: filePath };
   });
@@ -208,6 +222,7 @@ export function setupFileHandlers() {
       saveWorkspace();
       addToRecentWorkspaces(workspacePath);
       syncTerminalCwd(workspacePath);
+      ensureDeepseekMd(workspacePath);
       const win = BrowserWindow.fromWebContents(event.sender);
       if (win) startWatching(win);
       return true;
