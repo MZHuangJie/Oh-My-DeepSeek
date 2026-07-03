@@ -45,7 +45,7 @@ export default function BrowserView({ initialUrl }: Props) {
         })()
       `)) as string;
       const msg = `请分析以下网页内容：\nURL: ${pageUrl}\n标题: ${pageTitle}\n\n${pageText.slice(0, 5000)}`;
-      const textarea = document.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Ask DeepSeek"]');
+      const textarea = document.querySelector<HTMLTextAreaElement>('textarea[data-chat-input]');
       if (textarea) {
         const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
         setter?.call(textarea, msg);

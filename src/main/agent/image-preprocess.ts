@@ -10,13 +10,15 @@ function normalizePath(p: string): string {
   return p.trim().replace(/^["']|["']$/g, '');
 }
 
-/** 从文本中提取图片路径（markdown 粘贴格式 + @ 引用） */
+const DATA_IMAGE_RE = /^data:image\/\w+;base64,/i;
+
+/** 从文本中提取图片路径（markdown 粘贴格式 + @ 引用 + data URL） */
 export function extractImagePaths(text: string): string[] {
   const found = new Set<string>();
 
   for (const match of text.matchAll(MARKDOWN_IMAGE_RE)) {
     const p = normalizePath(match[1]);
-    if (p && (IMAGE_EXT_RE.test(p) || /\.ohmydeepseek[/\\]clipboard/i.test(p))) {
+    if (p && (IMAGE_EXT_RE.test(p) || /\.ohmydeepseek[/\\]clipboard/i.test(p) || DATA_IMAGE_RE.test(p))) {
       found.add(p);
     }
   }
@@ -30,7 +32,7 @@ export function extractImagePaths(text: string): string[] {
 }
 
 function formatVisionBlock(filePath: string, description: string): string {
-  const name = path.basename(filePath);
+  const name = filePath.startsWith('data:') ? '粘贴图片' : path.basename(filePath);
   return `【图片 ${name} 内容描述】\n${description}`;
 }
 

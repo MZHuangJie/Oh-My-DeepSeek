@@ -100,6 +100,7 @@ const PLAN_MODE_TOOLS = new Set([
   'web_search', 'web_fetch', 'web_screenshot', 'describe_image',
   'git_status', 'git_diff', 'git_log',
   'write_todos',
+  'present_choices', 'present_web',
 ]);
 
 /** 按 Agent 模式返回可用工具集 */

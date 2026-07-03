@@ -172,8 +172,12 @@ export function getDb(): DbLike {
     };
     initSchema();
     runMigrations(db);
+    console.log('[db] SQLite 持久化数据库已就绪:', dbPath);
     return db;
-  } catch {
+  } catch (err: any) {
+    console.error('[db] better-sqlite3 加载失败，回退到内存数据库（重启后数据丢失）');
+    console.error('[db] 错误原因:', err?.message || String(err));
+    console.error('[db] 请运行: npx electron-rebuild -f -w better-sqlite3');
     db = new MemDb();
     initSchema();
     return db;

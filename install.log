@@ -1,0 +1,14 @@
+[WARN] Moving electron that was installed by a different package manager to "node_modules/.ignored"
+[EPERM] EPERM: operation not permitted, rename 'D:\Oh My DeepSeek\node_modules\electron' -> 'D:\Oh My DeepSeek\node_modules\.ignored\electron'
+
+pnpm: EPERM: operation not permitted, rename 'D:\Oh My DeepSeek\node_modules\electron' -> 'D:\Oh My DeepSeek\node_modules\.ignored\electron'
+    at async Object.rename (node:internal/fs/promises:785:10)
+    at async renameOverwrite (file:///C:/Users/mzhua/AppData/Roaming/npm/node_modules/pnpm/dist/pnpm.mjs:62892:13)
+    at async safeIsInnerLink (file:///C:/Users/mzhua/AppData/Roaming/npm/node_modules/pnpm/dist/pnpm.mjs:177255:7)
+    at async file:///C:/Users/mzhua/AppData/Roaming/npm/node_modules/pnpm/dist/pnpm.mjs:177347:26
+    at async Promise.all (index 10)
+    at async partitionLinkedPackages (file:///C:/Users/mzhua/AppData/Roaming/npm/node_modules/pnpm/dist/pnpm.mjs:177342:3)
+    at async toResolveImporter (file:///C:/Users/mzhua/AppData/Roaming/npm/node_modules/pnpm/dist/pnpm.mjs:177295:33)
+    at async Promise.all (index 0)
+    at async resolveDependencies2 (file:///C:/Users/mzhua/AppData/Roaming/npm/node_modules/pnpm/dist/pnpm.mjs:177672:29)
+    at async _installInContext (file:///C:/Users/mzhua/AppData/Roaming/npm/node_modules/pnpm/dist/pnpm.mjs:190508:260)

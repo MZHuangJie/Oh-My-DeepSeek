@@ -19,6 +19,15 @@ interface ImagePayload {
 }
 
 function loadImagePayload(imagePath: string, prompt?: string): ImagePayload {
+  // 支持 data URL：直接解析 base64，无需读取文件
+  const dataUrlMatch = imagePath.match(/^data:(image\/\w+);base64,(.+)$/i);
+  if (dataUrlMatch) {
+    const mime = dataUrlMatch[1];
+    const base64 = dataUrlMatch[2];
+    const userPrompt = prompt || '请详细描述这张图片的内容，包括画面主体、场景、文字、颜色等所有可见信息。用中文回复。';
+    return { mime, base64, userPrompt };
+  }
+
   const absPath = path.resolve(imagePath);
   if (!fs.existsSync(absPath)) {
     throw new Error(`图片文件不存在: ${imagePath}`);

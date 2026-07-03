@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import Editor, { loader, OnMount } from '@monaco-editor/react';
 import { useEditorStore } from '../../stores/editor';
 import { useRefsStore } from '../../stores/refs';
+import { useThemeStore } from '../../stores/theme';
 import InlineExplainPanel from './InlineExplainPanel';
 
 // 配置 Monaco 从本地 public/vs 加载
@@ -24,6 +25,10 @@ export default function CodeEditor({ filePath, content, language, onChange, read
   const editorRef = useRef<import('monaco-editor').editor.IStandaloneCodeEditor | null>(null);
   const [monacoError, setMonacoError] = useState<string | null>(null);
   const [explainState, setExplainState] = useState<{ code: string; startLine: number; endLine: number } | null>(null);
+  const globalTheme = useThemeStore(s => s.globalPreset);
+  const areaOverride = useThemeStore(s => s.areas.editor?.preset);
+  const effectivePreset = areaOverride || globalTheme;
+  const monacoTheme = effectivePreset === 'dark' || effectivePreset === 'dark-hc' ? 'vs-dark' : 'vs';
   const goToTarget = useEditorStore(state => state.goToTarget);
 
   React.useEffect(() => {
@@ -177,7 +182,7 @@ export default function CodeEditor({ filePath, content, language, onChange, read
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <Editor value={content} language={language} onChange={onChange} onMount={handleMount} theme="vs-dark"
+        <Editor value={content} language={language} onChange={onChange} onMount={handleMount} theme={monacoTheme}
           loading={<div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: 12 }}>正在加载编辑器...</div>}
           options={{ readOnly, minimap: { enabled: false }, fontSize: 13, lineNumbers: 'on', scrollBeyondLastLine: false, wordWrap: 'on', padding: { top: 8 }, automaticLayout: true }}
           height="100%" />

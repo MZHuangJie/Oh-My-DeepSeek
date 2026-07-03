@@ -3,7 +3,7 @@ import { buildCachePrefix, buildMessages } from '../agent/cache';
 import type { ContentPart } from '../agent/types';
 import { getToolsForMode, getToolSchemas } from '../agent/tools';
 import type { MultiAgentRole } from '../agent/tools/index';
-import { buildProjectContext } from '../agent/context';
+import { buildProjectContext, loadProjectRules } from '../agent/context';
 import { SubAgentManager } from '../agent/sub-agent';
 import { getSystemPrompt, AgentMode } from '../agent/prompt';
 import { resolveVisionConfig } from '../agent/vision-config';
@@ -187,13 +187,14 @@ export function setupAgentHandlers() {
       const isMultiAgent = payload.mode === 'multi-agent';
       const multiAgentRoles = isMultiAgent ? (payload.roles ?? []) : [];
       const projectContext = isCharacterMode ? '' : buildProjectContext(payload.projectDir);
+      const projectRules = isCharacterMode ? '' : loadProjectRules(payload.projectDir);
 
       const subAgentManager = new SubAgentManager(win);
       sessionSubAgents.set(sessionId, subAgentManager);
 
       const tools = getToolsForMode(payload.mode, payload.projectDir);
       const promptParts = buildSystemPromptParts(payload.mode, payload.commandPrompt, multiAgentRoles, isMultiAgent, isCharacterMode);
-      const prefix = buildCachePrefix(promptParts, projectContext);
+      const prefix = buildCachePrefix(promptParts, projectContext, projectRules);
 
       const modelConfig = { model: payload.model || 'deepseek-v4-flash', baseUrl: payload.baseUrl ?? 'https://api.deepseek.com' };
       const visionConfig = resolveVisionConfig(modelConfig, payload.apiKey, { providerMultimodal: payload.providerMultimodal });

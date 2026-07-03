@@ -18,8 +18,8 @@ import styles from './ChatInput.module.css';
 
 export interface PastedImage {
   id: string;
-  dataUrl: string;
-  path: string;
+  previewUrl: string;  // blob URL 用于缩略图（体积小，发送后释放）
+  path: string;        // 磁盘文件路径（saveClipboardImage 失败时为空）
   mimeType: string;
 }
 
@@ -159,7 +159,11 @@ export default function ChatInput({ onSend, disabled, isStreaming, onStop }: Pro
   const hasDropdownOpen = showCommandPalette || showFileMention || showMemberMention || showModelSelect || showModeSelect;
 
   const removeImage = useCallback((id: string) => {
-    setImages(prev => prev.filter(img => img.id !== id));
+    setImages(prev => {
+      const removed = prev.find(img => img.id === id);
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter(img => img.id !== id);
+    });
   }, []);
 
   const pendingImagesRef = useRef(0);
@@ -177,25 +181,30 @@ export default function ChatInput({ onSend, disabled, isStreaming, onStop }: Pro
         if (!blob) continue;
         const id = `img-${Date.now()}-${i}`;
         const mimeType = item.type;
+        const previewUrl = URL.createObjectURL(blob);  // 缩略图用 blob URL
         pendingImagesRef.current++;
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const dataUrl = reader.result as string;
-          const base64 = dataUrl.split(',')[1];
+        void (async () => {
           try {
-            const filePath = await window.api.files.saveClipboardImage(base64, mimeType);
-            setImages(prev => [...prev, { id, dataUrl, path: filePath, mimeType }]);
-          } catch {
-            setImages(prev => [...prev, { id, dataUrl, path: '', mimeType }]);
+            const buf = await blob.arrayBuffer();
+            const filePath = await window.api.files.saveClipboardImage(new Uint8Array(buf), mimeType);
+            setImages(prev => [...prev, { id, previewUrl, path: filePath, mimeType }]);
+            // 不在这里 revoke：缩略图还需要显示。clearImages/removeImage 时统一清理
+          } catch (err) {
+            console.error('saveClipboardImage failed:', err);
+            setImages(prev => [...prev, { id, previewUrl, path: '', mimeType }]);
           }
           pendingImagesRef.current--;
-        };
-        reader.readAsDataURL(blob);
+        })();
       }
     }
   }, []);
 
-  const clearImages = useCallback(() => setImages([]), []);
+  const clearImages = useCallback(() => {
+    for (const img of imagesRef.current) {
+      if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
+    }
+    setImages([]);
+  }, []);
 
   const handleKeyDown = useCallback(async (e: React.KeyboardEvent) => {
     if (hasDropdownOpen && (e.key === 'Enter' || e.key === 'Escape')) {
@@ -217,7 +226,14 @@ export default function ChatInput({ onSend, disabled, isStreaming, onStop }: Pro
         setValue('');
         return;
       }
-      if (trimmed || images.length > 0) {
+      if (trimmed === '/new' || trimmed === '/clear') {
+        createSession();
+        setValue('');
+        clearImages();
+        focusInput();
+        return;
+      }
+      if (trimmed || images.length > 0 || pendingImagesRef.current > 0) {
         await sendMessage();
       }
     }
@@ -225,7 +241,7 @@ export default function ChatInput({ onSend, disabled, isStreaming, onStop }: Pro
       if (isStreaming) { onStop(); return; }
       setShowModelSelect(false); setShowModeSelect(false);
     }
-  }, [value, onSend, isStreaming, onStop, hasDropdownOpen, images, clearImages, focusInput]);
+  }, [value, onSend, isStreaming, onStop, hasDropdownOpen, images, clearImages, focusInput, createSession]);
 
   const selectCommand = (cmd: Command) => {
     setValue('/' + cmd.name + ' ');
@@ -261,7 +277,14 @@ export default function ChatInput({ onSend, disabled, isStreaming, onStop }: Pro
       setValue('');
       return;
     }
-    if (trimmed || images.length > 0) {
+    if (trimmed === '/new' || trimmed === '/clear') {
+      createSession();
+      setValue('');
+      clearImages();
+      focusInput();
+      return;
+    }
+    if (trimmed || images.length > 0 || pendingImagesRef.current > 0) {
       // 等待粘贴的图片完成异步保存（FileReader + IPC）
       while (pendingImagesRef.current > 0) {
         await new Promise(r => setTimeout(r, 50));
@@ -382,7 +405,7 @@ export default function ChatInput({ onSend, disabled, isStreaming, onStop }: Pro
         <div className={styles.imageStrip}>
           {images.map(img => (
             <div key={img.id} className={styles.imageChip}>
-              <img src={img.dataUrl} alt="" className={styles.imageThumb} />
+              <img src={img.previewUrl} alt="" className={styles.imageThumb} />
               <span className={styles.imageRemove} onClick={() => removeImage(img.id)} title="移除图片">✕</span>
             </div>
           ))}
@@ -397,6 +420,7 @@ export default function ChatInput({ onSend, disabled, isStreaming, onStop }: Pro
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
+          data-chat-input="true"
           placeholder={disabled ? 'AI 正在回复，可先输入下一条…' : 'Ask Oh My DeepSeek... (/ commands · @ files)'}
           spellCheck={false}
           className={shared.textarea}
@@ -536,8 +560,8 @@ export default function ChatInput({ onSend, disabled, isStreaming, onStop }: Pro
               <button
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={handleSend}
-                disabled={disabled || (!value.trim() && images.length === 0)}
-                className={disabled || (!value.trim() && images.length === 0) ? styles.sendBtnDisabled : styles.sendBtn}
+                disabled={disabled || (!value.trim() && images.length === 0 && pendingImagesRef.current === 0)}
+                className={disabled || (!value.trim() && images.length === 0 && pendingImagesRef.current === 0) ? styles.sendBtnDisabled : styles.sendBtn}
               >
                 <img src="./assets/9.png" alt="send" className={styles.sendIcon} />
               </button>

@@ -10,6 +10,7 @@ export interface SystemPromptParts {
 export interface CachePrefix {
   parts: SystemPromptParts;
   projectContext: string;
+  rules: string;
 }
 
 let cachedPrefix: CachePrefix | null = null;
@@ -22,10 +23,11 @@ function hash(str: string): string {
 export function buildCachePrefix(
   parts: SystemPromptParts,
   projectContext: string,
+  rules: string,
 ): CachePrefix {
-  const h = hash(parts.base + parts.roles + parts.plugins + parts.command + projectContext);
+  const h = hash(parts.base + parts.roles + parts.plugins + parts.command + projectContext + rules);
   if (h === lastHash && cachedPrefix) return cachedPrefix;
-  cachedPrefix = { parts, projectContext };
+  cachedPrefix = { parts, projectContext, rules };
   lastHash = h;
   return cachedPrefix;
 }
@@ -45,7 +47,7 @@ export function buildMessages(
   history: Array<{ role: string; content: string | any[] }>,
   newMessage: string | any[],
 ) {
-  const { parts, projectContext } = prefix;
+  const { parts, projectContext, rules } = prefix;
   const messages: Array<{ role: string; content: string | any[] }> = [];
 
   // [0] 基础 system prompt — 永远不变，前缀缓存的核心
@@ -62,6 +64,11 @@ export function buildMessages(
   // [2] 项目上下文
   if (projectContext) {
     messages.push({ role: 'system', content: `## 项目上下文\n\`\`\`\n${projectContext}\n\`\`\`` });
+  }
+
+  // [2b] 项目规则（DEEPSEEK.md / .deepseekrules）
+  if (rules) {
+    messages.push({ role: 'system', content: `## 项目规则\n以下是项目根目录中 \`DEEPSEEK.md\`（或 \`.deepseekrules\`）定义的规则，你必须遵守：\n\n${rules}` });
   }
 
   // [3] 命令模式

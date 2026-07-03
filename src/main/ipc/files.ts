@@ -18,7 +18,14 @@ function startWatching(win: BrowserWindow) {
   stopWatching();
   if (!currentWorkspace) return;
   try {
-    fileWatcher = fs.watch(currentWorkspace, { recursive: true }, () => {
+    fileWatcher = fs.watch(currentWorkspace, { recursive: true }, (_event, filename) => {
+      // 忽略 .git 和 .ohmydeepseek 内部变化，避免 Git 操作触发无限刷新循环
+      if (filename) {
+        const p = filename.replace(/\\/g, '/');
+        if (p.startsWith('.git/') || p === '.git' || p.startsWith('.ohmydeepseek/') || p === '.ohmydeepseek') {
+          return;
+        }
+      }
       if (watchDebounce) clearTimeout(watchDebounce);
       watchDebounce = setTimeout(() => {
         if (!win.isDestroyed()) {
@@ -276,14 +283,13 @@ export function setupFileHandlers() {
     return { success: true };
   });
 
-  ipcMain.handle('files:save-clipboard-image', async (_event, base64: string, mimeType: string) => {
+  ipcMain.handle('files:save-clipboard-image', async (_event, data: Uint8Array, mimeType: string) => {
     const clipboardDir = path.join(currentWorkspace, '.ohmydeepseek', 'clipboard');
     fs.mkdirSync(clipboardDir, { recursive: true });
     const ext = mimeType.split('/')[1] || 'png';
     const filename = `paste-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
     const filePath = path.join(clipboardDir, filename);
-    const buffer = Buffer.from(base64, 'base64');
-    fs.writeFileSync(filePath, buffer);
+    fs.writeFileSync(filePath, Buffer.from(data));
     return filePath;
   });
 

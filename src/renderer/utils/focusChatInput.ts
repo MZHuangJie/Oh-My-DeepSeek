@@ -3,7 +3,7 @@ export function focusChatInput() {
   requestAnimationFrame(() => {
     if (document.querySelector('[data-focus-guard]')) return;
     const textarea = document.querySelector<HTMLTextAreaElement>(
-      'textarea[placeholder*="Ask DeepSeek"]'
+      'textarea[data-chat-input]'
     );
     if (!textarea) return;
     textarea.focus();

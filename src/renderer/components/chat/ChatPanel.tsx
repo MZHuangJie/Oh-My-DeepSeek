@@ -208,7 +208,7 @@ export default function ChatPanel() {
 
   const invokeAgent = useCallback(async (opts: {
     history: HistoryEntry[];
-    newMessage: string;
+    newMessage: string | Array<{ type: 'text' | 'image_url'; text?: string; image_url?: { url: string } }>;
     commandPrompt?: string;
     sessionId: string;
   }) => {
@@ -449,17 +449,33 @@ export default function ChatPanel() {
 
     const modelConfig = getActiveModel();
     const providerSupportsVision = PROVIDERS[modelConfig.provider]?.multimodal ?? false;
-    const imageMarkdown = hasImages ? '\n' + images!.map(im => {
-      const displayUrl = im.path ? im.path.replace(/\\/g, '/') : im.dataUrl;
-	      return `![image](${displayUrl})`;
+    // 聊天显示用文件路径（MessageBubble 的 ImageCard 通过 files:readBinary 按需读取）
+    const displayMarkdown = hasImages ? '\n' + images!.map(im => {
+      const url = im.path ? im.path.replace(/\\/g, '/') : im.previewUrl;
+      return `![image](${url})`;
     }).join('\n') : '';
-    const storedContent = (displayContent || (hasImages ? '（图片）' : '')) + imageMarkdown;
-    const contentParts = (hasImages && providerSupportsVision)
-      ? [
-          { type: 'text' as const, text: content || displayContent || '请描述这张图片' },
-          ...images!.map(im => ({ type: 'image_url' as const, image_url: { url: im.dataUrl } })),
-        ]
-      : undefined;
+    const storedContent = (displayContent || (hasImages ? '（图片）' : '')) + displayMarkdown;
+    // 发给模型：用文件路径（Vision 预处理从磁盘读取；blob URL 主进程无法访问）
+    const imageMarkdown = hasImages ? '\n' + images!.map(im => {
+      if (!im.path) return '';  // 文件保存失败，跳过（模型看不到这张图）
+      return `![image](${im.path.replace(/\\/g, '/')})`;
+    }).filter(Boolean).join('\n') : '';
+    // 多模态 provider：从磁盘按需读取 dataUrl（不预存在内存里）
+    let contentParts: Array<{ type: 'text' | 'image_url'; text?: string; image_url?: { url: string } }> | undefined;
+    if (hasImages && providerSupportsVision) {
+      const parts: Array<{ type: 'text' | 'image_url'; text?: string; image_url?: { url: string } }> = [
+        { type: 'text', text: content || displayContent || '请描述这张图片' },
+      ];
+      for (const im of images!) {
+        if (im.path) {
+          try {
+            const dataUrl = await window.api.files.readBinary(im.path);
+            if (dataUrl) parts.push({ type: 'image_url', image_url: { url: dataUrl } });
+          } catch { /* 读取失败则跳过该图片 */ }
+        }
+      }
+      if (parts.length > 1) contentParts = parts;
+    }
     addMessage({
       id: `msg-${Date.now()}`,
       role: 'user',

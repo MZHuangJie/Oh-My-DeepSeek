@@ -30,6 +30,7 @@ import { useTerminalStore } from './stores/terminal';
 import { useConversationStore } from './stores/conversationStore';
 import { useLayoutStore, SIDEBAR_MIN_WIDTH } from './stores/layout';
 import { useIconThemeStore } from './stores/iconTheme';
+import { useThemeStore } from './stores/theme';
 import { useBrowserStore } from './stores/browser';
 import { useModeStore } from './stores/mode';
 import AccountCenter from './components/account/AccountCenter';
@@ -81,6 +82,8 @@ export default function App() {
   const authRestore = useAuthStore(s => s.restore);
   const { url: browserUrl, open: browserOpen, setOpen: setBrowserOpen } = useBrowserStore();
   const [showAccountCenter, setShowAccountCenter] = React.useState(false);
+  const [maximized, setMaximized] = React.useState(false);
+  React.useEffect(() => { window.api.window.isMaximized().then(setMaximized); }, []);
 
   useEffect(() => {
     if (mode !== 'roleplay' && openView === 'roleplay') {
@@ -94,6 +97,7 @@ export default function App() {
 
   useEffect(() => {
     useIconThemeStore.getState().loadThemes();
+    useThemeStore.getState().loadTheme();
   }, []);
   const handleToggleView = (view: PanelView) => {
     if (view === 'browser') {
@@ -215,13 +219,17 @@ export default function App() {
         <span style={{ flex: 1, textAlign: 'center' }}><img src="./assets/logo.png" alt="" style={{ width: 16, height: 14, marginRight: 6, verticalAlign: 'middle' }} />Oh My DeepSeek</span>
         <div style={{ width: 100, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, paddingRight: 12, WebkitAppRegion: 'no-drag' }}>
           <WindowControlBtn onClick={() => window.api.window.minimize()}>
-            <img src="./assets/图层 11_w.png" alt="minimize" style={{ width: 12, height: 2 }} />
+            <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1" fill="currentColor" /></svg>
           </WindowControlBtn>
-          <WindowControlBtn onClick={() => window.api.window.maximize()}>
-            <img src="./assets/图层 10_w.png" alt="maximize" style={{ width: 12, height: 12 }} />
+          <WindowControlBtn onClick={() => { window.api.window.maximize(); setMaximized(!maximized); }}>
+            {maximized ? (
+              <svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" strokeWidth="1.2" /><rect x="3" y="2" width="7" height="7" rx="1" fill="var(--bg-primary)" stroke="currentColor" strokeWidth="1.2" /></svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" strokeWidth="1.2" /></svg>
+            )}
           </WindowControlBtn>
           <WindowControlBtn onClick={() => window.api.window.close()}>
-            <img src="./assets/图层 12_w.png" alt="close" style={{ width: 12, height: 12 }} />
+            <svg width="12" height="12" viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" strokeWidth="1.3" /><line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" strokeWidth="1.3" /></svg>
           </WindowControlBtn>
         </div>
       </div>

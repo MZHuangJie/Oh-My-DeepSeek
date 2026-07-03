@@ -5,6 +5,7 @@ const api = {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),
     close: () => ipcRenderer.invoke('window:close'),
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
   },
   files: {
     list: (dirPath: string) => ipcRenderer.invoke('files:list', dirPath),
@@ -29,7 +30,7 @@ const api = {
     write: (filePath: string, content: string) => ipcRenderer.invoke('files:write', filePath, content),
     readBinary: (filePath: string) => ipcRenderer.invoke('files:readBinary', filePath),
     showInExplorer: (filePath: string) => ipcRenderer.invoke('files:show-in-explorer', filePath),
-    saveClipboardImage: (base64: string, mimeType: string) => ipcRenderer.invoke('files:save-clipboard-image', base64, mimeType),
+    saveClipboardImage: (data: Uint8Array, mimeType: string) => ipcRenderer.invoke('files:save-clipboard-image', data, mimeType),
     saveBase64Image: (base64DataUrl: string, targetPath: string) => ipcRenderer.invoke('files:saveBase64Image', base64DataUrl, targetPath),
     downloadImage: (base64DataUrl: string, defaultName: string) => ipcRenderer.invoke('files:downloadImage', base64DataUrl, defaultName),
     fetchAsDataUrl: (url: string) => ipcRenderer.invoke('files:fetchAsDataUrl', url),

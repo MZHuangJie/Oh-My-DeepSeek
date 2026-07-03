@@ -357,7 +357,7 @@ function UserActions({ message, visible }: { message: Message; visible: boolean 
   }, [message.content]);
 
   const fillTextarea = useCallback((text: string, focus: boolean) => {
-    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Ask DeepSeek"]');
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[data-chat-input]');
     if (!textarea) return;
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
     nativeInputValueSetter?.call(textarea, text);
@@ -368,7 +368,7 @@ function UserActions({ message, visible }: { message: Message; visible: boolean 
   const handleResend = useCallback(() => {
     fillTextarea(message.content, false);
     setTimeout(() => {
-      const textarea = document.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Ask DeepSeek"]');
+      const textarea = document.querySelector<HTMLTextAreaElement>('textarea[data-chat-input]');
       textarea?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
     }, 50);
   }, [message.content, fillTextarea]);

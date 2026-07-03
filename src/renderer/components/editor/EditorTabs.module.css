@@ -6,7 +6,7 @@
 }
 
 .tabActiveBg {
-  background: #1e1e1e;
+  background: var(--editor-bg);
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
 }

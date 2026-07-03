@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DiffEditor, loader } from '@monaco-editor/react';
+import { useThemeStore } from '../../stores/theme';
 
 try {
   loader.config({ paths: { vs: './vs' } });
@@ -70,7 +71,7 @@ export default function DiffView({
           original={original}
           modified={modified}
           language={language}
-          theme="vs-dark"
+          theme={(() => { const p = useThemeStore(s => s.areas.editor?.preset || s.globalPreset); return p === 'dark' || p === 'dark-hc' ? 'vs-dark' : 'vs'; })()}
           loading={<div style={{ padding: 8, fontSize: 11, color: '#8888aa' }}>加载 Diff…</div>}
           options={{
             readOnly: true,
